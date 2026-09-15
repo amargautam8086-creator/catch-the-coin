@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Catch The Coin V7</title>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    user-select:none;
+}
+
+body{
+    overflow:hidden;
+    background:#050816;
+    font-family:Arial,sans-serif;
+}
+
+canvas{
+    display:block;
+}
+
+#hud{
+    position:fixed;
+    top:12px;
+    left:12px;
+    right:12px;
+    display:flex;
+    justify-content:space-between;
+    gap:8px;
+    z-index:5;
+}
+
+.box{
+    padding:8px 12px;
+    border-radius:12px;
+    background:rgba(0,0,0,.45);
+    color:white;
+    font-weight:bold;
+    border:1px solid rgba(255,255,255,.2);
+    backdrop-filter:blur(5px);
+}
+
+.topButtons{
+    position:fixed;
+    top:62px;
+    right:12px;
+    z-index:6;
+    display:flex;
+    gap:6px;
+}
+
+.smallBtn{
+    border:0;
+    border-radius:10px;
+    padding:8px 12px;
+    background:rgba(255,255,255,.18);
+    color:white;
+    font-size:16px;
+    cursor:pointer;
+}
+
+.panel{
+    position:fixed;
+    inset:0;
+    z-index:20;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    background:rgba(0,0,0,.78);
+}
+
+.card{
+    width:min(430px,90%);
+    padding:30px 20px;
+    text-align:center;
+    color:white;
+    border-radius:24px;
+    background:linear-gradient(145deg,#101a3b,#182854);
+    border:1px solid rgba(255,255,255,.2);
+    box-shadow:0 0 40px rgba(0,180,255,.25);
+}
+
+.title{
+    font-size:42px;
+    color:#ffd43b;
+    text-shadow:0 0 18px #ff9d00;
+    margin-bottom:10px;
+}
+
+.subtitle{
+    color:#dce8ff;
+    margin-bottom:18px;
+    line-height:1.5;
+}
+
+.mainBtn{
+    border:0;
+    border-radius:14px;
+    padding:13px 30px;
+    margin:7px;
+    font-size:18px;
+    font-weight:bold;
+    cursor:pointer;
+    background:#ffd43b;
+    color:#111;
+    box-shadow:0 5px 15px #000;
+}
+
+.mainBtn:active{
+    transform:scale(.95);
+}
+
+.info{
+    margin:14px 0;
+    line-height:1.8;
+    color:#c9d6ff;
+}
+
+#gameOver{
+    display:none;
+}
+
+#pausePanel{
+    display:none;
+}
+
+#controls{
+    position:fixed;
+    bottom:18px;
+    left:0;
+    right:0;
+    display:flex;
+    justify-content:center;
+    gap:25px;
+    z-index:8;
+}
+
+.control{
+    width:80px;
+    height:60px;
+    border-radius:18px;
+    border:2px solid rgba(255,255,255,.25);
+    background:rgba(255,255,255,.15);
+    color:white;
+    font-size:27px;
+}
+
+#message{
+    position:fixed;
+    top:105px;
+    left:50%;
+    transform:translateX(-50%);
+    z-index:7;
+    color:#ffd43b;
+    font-size:20px;
+    font-weight:bold;
+    text-shadow:0 0 10px #ff8c00;
+    opacity:0;
+    pointer-events:none;
+}
+
+@media(max-width:600px){
+    .box{
+        font-size:13px;
+        padding:7px 8px;
+    }
+
+    .title{
+        font-size:34px;
+    }
+}
+</style>
+</head>
+
+<body>
+
+<canvas id="game"></canvas>
+
+<div id="hud">
+    <div class="box">🪙 <span id="score">0</span></div>
+    <div class="box">❤️ <span id="lives">3</span></div>
+    <div class="box">⭐ Lv <span id="level">1</span></div>
+    <div class="box">🏆 <span id="best">0</span></div>
+</div>
+
+<div class="topButtons">
+    <button class="smallBtn" id="soundBtn">🔊</button>
+    <button class="smallBtn" id="pauseBtn">⏸️</button>
+</div>
+
+<div id="message">LEVEL UP!</div>
+
+<div id="startPanel" class="panel">
+    <div class="card">
+        <div class="title">🪙 CATCH THE COIN</div>
+
+        <div class="subtitle">
+            Catch the coins and avoid the bombs!
+        </div>
+
+        <div class="info">
+            🪙 Coin = +1 Score<br>
+            💣 Bomb = -1 Life<br>
+            ⭐ Every 5 coins = New Level<br>
+            🎮 Use Arrow Keys or Mobile Buttons
+        </div>
+
+        <button class="mainBtn" onclick="startGame()">
+            ▶️ PLAY GAME
+        </button>
+    </div>
+</div>
+
+<div id="pausePanel" class="panel">
+    <div class="card">
+        <div class="title">⏸️ PAUSED</div>
+        <div class="subtitle">Game is paused.</div>
+
+        <button class="mainBtn" onclick="togglePause()">
+            ▶️ RESUME
+        </button>
+    </div>
+</div>
+
+<div id="gameOver" class="panel">
+    <div class="card">
+        <div class="title">GAME OVER</div>
+
+        <div class="info">
+            🪙 Score: <b id="finalScore">0</b><br>
+            🏆 Best Score: <b id="finalBest">0</b><br>
+            ⭐ Level: <b id="finalLevel">1</b>
+        </div>
+
+        <button class="mainBtn" onclick="startGame()">
+            🔄 PLAY AGAIN
+        </button>
+    </div>
+</div>
+
+<div id="controls">
+    <button class="control" id="leftBtn">⬅️</button>
+    <button class="control" id="rightBtn">➡️</button>
+</div>
+
+<script>
+
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let W,H;
+
+function resize(){
+    W=canvas.width=window.innerWidth;
+    H=canvas.height=window.innerHeight;
+}
+
+resize();
+window.addEventListener("resize",resize);
+
+
+// ================= AUDIO =================
+
+let audio=null;
+let soundOn=true;
+
+function startAudio(){
+
+    if(!audio){
+        audio=new (window.AudioContext ||
+                   window.webkitAudioContext)();
+    }
+
+    if(audio.state==="suspended"){
+        audio.resume();
+    }
+}
+
+function sound(freq,duration=.1){
+
+    if(!soundOn || !audio)return;
+
+    const osc=audio.createOscillator();
+    const gain=audio.createGain();
+
+    osc.frequency.value=freq;
+    osc.type="sine";
+
+    gain.gain.setValueAtTime(.12,audio.currentTime);
+
+    gain.gain.exponentialRampToValueAtTime(
+        .001,
+        audio.currentTime+duration
+    );
+
+    osc.connect(gain);
+    gain.connect(audio.destination);
+
+    osc.start();
+    osc.stop(audio.currentTime+duration);
+}
+
+
+// ================= GAME =================
+
+let player;
+
+let coins=[];
+let bombs=[];
+let particles=[];
+let stars=[];
+
+let score=0;
+let lives=3;
+let level=1;
+
+let running=false;
+let paused=false;
+
+let left=false;
+let right=false;
+
+let spawnTimer=0;
+
+let bestScore=
+Number(localStorage.getItem("catchCoinBestV7")) || 0;
+
+for(let i=0;i<100;i++){
+
+    stars.push({
+        x:Math.random(),
+        y:Math.random(),
+        size:Math.random()*2+1,
+        speed:Math.random()*.003+.001
+    });
+}
+
+
+// ================= PLAYER =================
+
+function createPlayer(){
+
+    player={
+        x:W/2,
+        y:H-115,
+        w:58,
+        h:68,
+        speed:7
+    };
+}
+
+
+// ================= START =================
+
+function startGame(){
+
+    startAudio();
+
+    score=0;
+    lives=3;
+    level=1;
+
+    coins=[];
+    bombs=[];
+    particles=[];
+
+    spawnTimer=0;
+
+    paused=false;
+    running=true;
+
+    createPlayer();
+
+    document.getElementById("startPanel").style.display="none";
+    document.getElementById("gameOver").style.display="none";
+    document.getElementById("pausePanel").style.display="none";
+
+    updateHUD();
+
+    sound(700,.15);
+}
+
+
+// ================= HUD =================
+
+function updateHUD(){
+
+    document.getElementById("score").textContent=score;
+    document.getElementById("lives").textContent=lives;
+    document.getElementById("level").textContent=level;
+    document.getElementById("best").textContent=bestScore;
+}
+
+
+// ================= SPAWN =================
+
+function spawnCoin(){
+
+    coins.push({
+        x:Math.random()*(W-40)+20,
+        y:-30,
+        r:15,
+        speed:3+level*.35,
+        rot:0
+    });
+}
+
+function spawnBomb(){
+
+    bombs.push({
+        x:Math.random()*(W-45)+22,
+        y:-35,
+        r:18,
+        speed:3.3+level*.42,
+        rot:0
+    });
+}
+
+
+// ================= PARTICLES =================
+
+function particlesAt(x,y,type){
+
+    for(let i=0;i<18;i++){
+
+        particles.push({
+            x:x,
+            y:y,
+            vx:(Math.random()-.5)*6,
+            vy:(Math.random()-.5)*6,
+            life:35,
+            type:type
+        });
+    }
+}
+
+
+// ================= COLLISION =================
+
+function hit(a,b){
+
+    return(
+        a.x-a.w/2 < b.x+b.r &&
+        a.x+a.w/2 > b.x-b.r &&
+        a.y-a.h/2 < b.y+b.r &&
+        a.y+a.h/2 > b.y-b.r
+    );
+}
+
+
+// ================= PLAYER DRAW =================
+
+function drawPlayer(){
+
+    if(!player)return;
+
+    ctx.save();
+
+    ctx.translate(player.x,player.y);
+
+    // glow
+    ctx.shadowColor="#00d9ff";
+    ctx.shadowBlur=22;
+
+    // body
+    const gradient=ctx.createLinearGradient(
+        -30,-35,30,35
+    );
+
+    gradient.addColorStop(0,"#19e6ff");
+    gradient.addColorStop(1,"#1470ff");
+
+    ctx.fillStyle=gradient;
+
+    ctx.beginPath();
+    ctx.roundRect(-29,-34,58,68,15);
+    ctx.fill();
+
+    ctx.shadowBlur=0;
+
+    // eyes
+    ctx.fillStyle="white";
+
+    ctx.beginPath();
+    ctx.arc(-10,-11,7,0,Math.PI*2);
+    ctx.arc(10,-11,7,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.fillStyle="#111";
+
+    ctx.beginPath();
+    ctx.arc(-10,-11,3,0,Math.PI*2);
+    ctx.arc(10,-11,3,0,Math.PI*2);
+    ctx.fill();
+
+    // smile
+    ctx.strokeStyle="white";
+    ctx.lineWidth=3;
+
+    ctx.beginPath();
+    ctx.arc(0,2,14,0,Math.PI);
+    ctx.stroke();
+
+    // feet
+    ctx.fillStyle="#123a9c";
+
+    ctx.fillRect(-23,28,17,8);
+    ctx.fillRect(6,28,17,8);
+
+    ctx.restore();
+}
+
+
+// ================= COIN DRAW =================
+
+function drawCoin(c){
+
+    ctx.save();
+
+    ctx.translate(c.x,c.y);
+
+    c.rot+=.08;
+
+    ctx.rotate(c.rot);
+
+    ctx.shadowColor="#ffd43b";
+    ctx.shadowBlur=22;
+
+    const g=ctx.createRadialGradient(
+        -4,-5,2,
+        0,0,c.r
+    );
+
+    g.addColorStop(0,"#fff7a0");
+    g.addColorStop(.5,"#ffd43b");
+    g.addColorStop(1,"#e99d00");
+
+    ctx.fillStyle=g;
+
+    ctx.beginPath();
+    ctx.arc(0,0,c.r,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.shadowBlur=0;
+
+    ctx.fillStyle="#fff8c4";
+    ctx.font="bold 16px Arial";
+    ctx.textAlign="center";
+    ctx.textBaseline="middle";
+    ctx.fillText("$",0,1);
+
+    ctx.restore();
+}
+
+
+// ================= BOMB DRAW =================
+
+function drawBomb(b){
+
+    ctx.save();
+
+    ctx.translate(b.x,b.y);
+
+    b.rot+=.06;
+    ctx.rotate(b.rot);
+
+    ctx.shadowColor="#ff3030";
+    ctx.shadowBlur=18;
+
+    ctx.fillStyle="#171717";
+
+    ctx.beginPath();
+    ctx.arc(0,0,b.r,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.shadowBlur=0;
+
+    ctx.strokeStyle="#ff5151";
+    ctx.lineWidth=3;
+
+    ctx.beginPath();
+    ctx.moveTo(-8,-8);
+    ctx.lineTo(8,8);
+    ctx.moveTo(8,-8);
+    ctx.lineTo(-8,8);
+    ctx.stroke();
+
+    // fuse
+    ctx.strokeStyle="#ffbd3b";
+    ctx.lineWidth=4;
+
+    ctx.beginPath();
+    ctx.moveTo(0,-18);
+    ctx.lineTo(7,-27);
+    ctx.stroke();
+
+    ctx.fillStyle="#ffbd3b";
+
+    ctx.beginPath();
+    ctx.arc(8,-28,4,0,Math.PI*2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+
+// ================= BACKGROUND =================
+
+function drawBackground(){
+
+    const bg=ctx.createLinearGradient(0,0,0,H);
+
+    bg.addColorStop(0,"#050b24");
+    bg.addColorStop(.55,"#102d58");
+    bg.addColorStop(1,"#172b38");
+
+    ctx.fillStyle=bg;
+    ctx.fillRect(0,0,W,H);
+
+    // stars
+    for(const s of stars){
+
+        s.y+=s.speed*level;
+
+        if(s.y>1)s.y=0;
+
+        ctx.fillStyle="rgba(255,255,255,.75)";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            s.x*W,
+            s.y*H,
+            s.size,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    // moon
+    ctx.fillStyle="rgba(255,244,190,.9)";
+
+    ctx.beginPath();
+    ctx.arc(W-65,90,28,0,Math.PI*2);
+    ctx.fill();
+
+    // ground
+    ctx.fillStyle="#142a34";
+    ctx.fillRect(0,H-35,W,35);
+
+    ctx.fillStyle="rgba(0,220,255,.25)";
+    ctx.fillRect(0,H-35,W,2);
+}
+
+
+// ================= LEVEL MESSAGE =================
+
+function levelMessage(){
+
+    const msg=document.getElementById("message");
+
+    msg.textContent="⭐ LEVEL "+level+"!";
+
+    msg.style.opacity="1";
+
+    setTimeout(()=>{
+        msg.style.opacity="0";
+    },900);
+}
+
+
+// ================= UPDATE =================
+
+function update(){
+
+    if(!running || paused)return;
+
+    // movement
+
+    if(left)player.x-=player.speed;
+    if(right)player.x+=player.speed;
+
+    if(player.x<player.w/2)
+        player.x=player.w/2;
+
+    if(player.x>W-player.w/2)
+        player.x=W-player.w/2;
+
+
+    // spawn
+
+    spawnTimer++;
+
+    const interval=Math.max(18,52-level*3);
+
+    if(spawnTimer>=interval){
+
+        if(Math.random()<.68)
+            spawnCoin();
+        else
+            spawnBomb();
+
+        spawnTimer=0;
+    }
+
+
+    // coins
+
+    for(let i=coins.length-1;i>=0;i--){
+
+        const c=coins[i];
+
+        c.y+=c.speed;
+
+        if(hit(player,c)){
+
+            score++;
+
+            particlesAt(c.x,c.y,"coin");
+
+            sound(900,.08);
+
+            coins.splice(i,1);
+
+            if(score>bestScore){
+
+                bestScore=score;
+
+                localStorage.setItem(
+                    "catchCoinBestV7",
+                    bestScore
+                );
+            }
+
+            if(score%5===0){
+
+                level++;
+
+                levelMessage();
+
+                sound(1200,.15);
+            }
+
+            updateHUD();
+        }
+
+        else if(c.y>H+50){
+
+            coins.splice(i,1);
+        }
+    }
+
+
+    // bombs
+
+    for(let i=bombs.length-1;i>=0;i--){
+
+        const b=bombs[i];
+
+        b.y+=b.speed;
+
+        if(hit(player,b)){
+
+            lives--;
+
+            particlesAt(b.x,b.y,"bomb");
+
+            sound(160,.25);
+
+            bombs.splice(i,1);
+
+            updateHUD();
+
+            if(lives<=0){
+
+                endGame();
+                return;
+            }
+        }
+
+        else if(b.y>H+50){
+
+            bombs.splice(i,1);
+        }
+    }
+
+
+    // particles
+
+    for(let i=particles.length-1;i>=0;i--){
+
+        const p=particles[i];
+
+        p.x+=p.vx;
+        p.y+=p.vy;
+
+        p.vx*=.98;
+        p.vy*=.98;
+
+        p.life--;
+
+        if(p.life<=0)
+            particles.splice(i,1);
+    }
+}
+
+
+// ================= PARTICLE DRAW =================
+
+function drawParticles(){
+
+    for(const p of particles){
+
+        ctx.globalAlpha=p.life/35;
+
+        ctx.fillStyle=
+            p.type==="bomb"
+            ? "#ff4242"
+            : "#ffd43b";
+
+        ctx.beginPath();
+
+        ctx.arc(
+            p.x,
+            p.y,
+            3,
+            0,
+            Math.PI*2
+        );
+
+        ctx.fill();
+    }
+
+    ctx.globalAlpha=1;
+}
+
+
+// ================= DRAW =================
+
+function draw(){
+
+    drawBackground();
+
+    for(const c of coins)
+        drawCoin(c);
+
+    for(const b of bombs)
+        drawBomb(b);
+
+    drawParticles();
+
+    drawPlayer();
+}
+
+
+// ================= END GAME =================
+
+function endGame(){
+
+    running=false;
+    paused=false;
+
+    document.getElementById("finalScore").textContent=score;
+    document.getElementById("finalBest").textContent=bestScore;
+    document.getElementById("finalLevel").textContent=level;
+
+    document.getElementById("gameOver").style.display="flex";
+
+    sound(120,.5);
+}
+
+
+// ================= PAUSE =================
+
+function togglePause(){
+
+    if(!running)return;
+
+    paused=!paused;
+
+    document.getElementById("pausePanel").style.display=
+        paused ? "flex" : "none";
+
+    document.getElementById("pauseBtn").textContent=
+        paused ? "▶️" : "⏸️";
+}
+
+
+// ================= SOUND BUTTON =================
+
+document.getElementById("soundBtn").onclick=()=>{
+
+    soundOn=!soundOn;
+
+    document.getElementById("soundBtn").textContent=
+        soundOn ? "🔊" : "🔇";
+
+    if(soundOn){
+
+        startAudio();
+        sound(700,.1);
+    }
+};
+
+document.getElementById("pauseBtn").onclick=togglePause;
+
+
+// ================= KEYBOARD =================
+
+window.addEventListener("keydown",e=>{
+
+    if(e.key==="ArrowLeft" ||
+       e.key.toLowerCase()==="a"){
+
+        left=true;
+    }
+
+    if(e.key==="ArrowRight" ||
+       e.key.toLowerCase()==="d"){
+
+        right=true;
+    }
+
+    if(e.key===" " ||
+       e.key.toLowerCase()==="p"){
+
+        togglePause();
+    }
+});
+
+window.addEventListener("keyup",e=>{
+
+    if(e.key==="ArrowLeft" ||
+       e.key.toLowerCase()==="a"){
+
+        left=false;
+    }
+
+    if(e.key==="ArrowRight" ||
+       e.key.toLowerCase()==="d"){
+
+        right=false;
+    }
+});
+
+
+// ================= MOBILE =================
+
+function holdButton(button,action){
+
+    button.addEventListener("touchstart",e=>{
+        e.preventDefault();
+        action(true);
+    });
+
+    button.addEventListener("touchend",e=>{
+        e.preventDefault();
+        action(false);
+    });
+
+    button.addEventListener("mousedown",()=>{
+        action(true);
+    });
+
+    button.addEventListener("mouseup",()=>{
+        action(false);
+    });
+
+    button.addEventListener("mouseleave",()=>{
+        action(false);
+    });
+}
+
+holdButton(
+    document.getElementById("leftBtn"),
+    v=>left=v
+);
+
+holdButton(
+    document.getElementById("rightBtn"),
+    v=>right=v
+);
+
+
+// ================= LOOP =================
+
+function loop(){
+
+    update();
+    draw();
+
+    requestAnimationFrame(loop);
+}
+
+updateHUD();
+loop();
+
+</script>
+
+</body>
+</html>
